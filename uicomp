@@ -1,0 +1,254 @@
+-- UI Components Module
+local UIComponents = {}
+
+-- Function to create toggle
+function UIComponents.createToggle(contentFrame, name, position, description, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = name .. "Frame"
+    toggleFrame.Size = UDim2.new(1, 0, 0, 40)
+    toggleFrame.Position = UDim2.new(0, 0, 0, position)
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Parent = contentFrame
+    
+    local toggleName = Instance.new("TextLabel")
+    toggleName.Name = "ToggleName"
+    toggleName.Size = UDim2.new(0.7, 0, 0.5, 0)
+    toggleName.Position = UDim2.new(0, 0, 0, 0)
+    toggleName.BackgroundTransparency = 1
+    toggleName.Text = name
+    toggleName.TextColor3 = Color3.fromRGB(220, 220, 220)
+    toggleName.TextSize = 14
+    toggleName.Font = Enum.Font.GothamSemibold
+    toggleName.TextXAlignment = Enum.TextXAlignment.Left
+    toggleName.Parent = toggleFrame
+    
+    local toggleDescription = Instance.new("TextLabel")
+    toggleDescription.Name = "ToggleDescription"
+    toggleDescription.Size = UDim2.new(0.7, 0, 0.5, 0)
+    toggleDescription.Position = UDim2.new(0, 0, 0.5, 0)
+    toggleDescription.BackgroundTransparency = 1
+    toggleDescription.Text = description
+    toggleDescription.TextColor3 = Color3.fromRGB(180, 180, 180)
+    toggleDescription.TextSize = 11
+    toggleDescription.Font = Enum.Font.Gotham
+    toggleDescription.TextXAlignment = Enum.TextXAlignment.Left
+    toggleDescription.Parent = toggleFrame
+    
+    local toggleButton = Instance.new("Frame")
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 40, 0, 20)
+    toggleButton.Position = UDim2.new(1, -40, 0.5, -10)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+    toggleButton.BorderSizePixel = 0
+    toggleButton.Parent = toggleFrame
+    
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(1, 0)
+    toggleCorner.Parent = toggleButton
+    
+    local toggleCircle = Instance.new("Frame")
+    toggleCircle.Name = "ToggleCircle"
+    toggleCircle.Size = UDim2.new(0, 16, 0, 16)
+    toggleCircle.Position = UDim2.new(0, 2, 0.5, -8)
+    toggleCircle.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    toggleCircle.BorderSizePixel = 0
+    toggleCircle.Parent = toggleButton
+    
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(1, 0)
+    circleCorner.Parent = toggleCircle
+    
+    local button = Instance.new("TextButton")
+    button.Name = "Button"
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.Parent = toggleButton
+    
+    local enabled = false
+    
+    local function updateToggle()
+        if enabled then
+            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+            toggleCircle:TweenPosition(UDim2.new(0, 22, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+        else
+            toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+            toggleCircle:TweenPosition(UDim2.new(0, 2, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+        end
+        
+        if callback then
+            callback(enabled)
+        end
+    end
+    
+    button.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        updateToggle()
+    end)
+    
+    return {
+        frame = toggleFrame,
+        setEnabled = function(value)
+            enabled = value
+            updateToggle()
+        end,
+        getEnabled = function()
+            return enabled
+        end
+    }
+end
+
+-- Function to create dropdown selector
+function UIComponents.createDropdown(contentFrame, name, position, description, options, callback)
+    local dropdownFrame = Instance.new("Frame")
+    dropdownFrame.Name = name .. "Frame"
+    dropdownFrame.Size = UDim2.new(1, 0, 0, 40)
+    dropdownFrame.Position = UDim2.new(0, 0, 0, position)
+    dropdownFrame.BackgroundTransparency = 1
+    dropdownFrame.Parent = contentFrame
+    
+    local dropdownName = Instance.new("TextLabel")
+    dropdownName.Name = "DropdownName"
+    dropdownName.Size = UDim2.new(0.7, 0, 0.5, 0)
+    dropdownName.Position = UDim2.new(0, 0, 0, 0)
+    dropdownName.BackgroundTransparency = 1
+    dropdownName.Text = name
+    dropdownName.TextColor3 = Color3.fromRGB(220, 220, 220)
+    dropdownName.TextSize = 14
+    dropdownName.Font = Enum.Font.GothamSemibold
+    dropdownName.TextXAlignment = Enum.TextXAlignment.Left
+    dropdownName.Parent = dropdownFrame
+    
+    local dropdownDescription = Instance.new("TextLabel")
+    dropdownDescription.Name = "DropdownDescription"
+    dropdownDescription.Size = UDim2.new(0.7, 0, 0.5, 0)
+    dropdownDescription.Position = UDim2.new(0, 0, 0.5, 0)
+    dropdownDescription.BackgroundTransparency = 1
+    dropdownDescription.Text = description
+    dropdownDescription.TextColor3 = Color3.fromRGB(180, 180, 180)
+    dropdownDescription.TextSize = 11
+    dropdownDescription.Font = Enum.Font.Gotham
+    dropdownDescription.TextXAlignment = Enum.TextXAlignment.Left
+    dropdownDescription.Parent = dropdownFrame
+    
+    -- Create dropdown button
+    local dropdownButton = Instance.new("TextButton")
+    dropdownButton.Name = "DropdownButton"
+    dropdownButton.Size = UDim2.new(0.4, 0, 0, 25)
+    dropdownButton.Position = UDim2.new(0.6, 0, 0.5, -12)
+    dropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    dropdownButton.BorderSizePixel = 0
+    dropdownButton.Text = options[1] -- Default to first option
+    dropdownButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    dropdownButton.Font = Enum.Font.Gotham
+    dropdownButton.TextSize = 12
+    dropdownButton.Parent = dropdownFrame
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 4)
+    buttonCorner.Parent = dropdownButton
+    
+    -- Create dropdown arrow
+    local dropdownArrow = Instance.new("TextLabel")
+    dropdownArrow.Name = "DropdownArrow"
+    dropdownArrow.Size = UDim2.new(0, 25, 0, 25)
+    dropdownArrow.Position = UDim2.new(1, -25, 0, 0)
+    dropdownArrow.BackgroundTransparency = 1
+    dropdownArrow.Text = "▼"
+    dropdownArrow.TextColor3 = Color3.fromRGB(180, 180, 180)
+    dropdownArrow.TextSize = 10
+    dropdownArrow.Font = Enum.Font.GothamBold
+    dropdownArrow.Parent = dropdownButton
+    
+    -- Create dropdown menu (initially hidden)
+    local dropdownMenu = Instance.new("Frame")
+    dropdownMenu.Name = "DropdownMenu"
+    dropdownMenu.Size = UDim2.new(1, 0, 0, #options * 30)
+    dropdownMenu.Position = UDim2.new(0, 0, 1, 5)
+    dropdownMenu.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    dropdownMenu.BorderSizePixel = 0
+    dropdownMenu.Visible = false
+    dropdownMenu.ZIndex = 10 -- Make sure it appears on top
+    dropdownMenu.Parent = dropdownButton
+    
+    local menuCorner = Instance.new("UICorner")
+    menuCorner.CornerRadius = UDim.new(0, 4)
+    menuCorner.Parent = dropdownMenu
+    
+    -- Create options
+    local selectedOption = options[1]
+    for i, option in ipairs(options) do
+        local optionButton = Instance.new("TextButton")
+        optionButton.Name = option .. "Option"
+        optionButton.Size = UDim2.new(1, 0, 0, 30)
+        optionButton.Position = UDim2.new(0, 0, 0, (i-1) * 30)
+        optionButton.BackgroundTransparency = 1
+        optionButton.Text = option
+        optionButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 12
+        optionButton.ZIndex = 10
+        optionButton.Parent = dropdownMenu
+        
+        optionButton.MouseButton1Click:Connect(function()
+            selectedOption = option
+            dropdownButton.Text = option
+            dropdownMenu.Visible = false
+            
+            if callback then
+                callback(option)
+            end
+        end)
+    end
+    
+    -- Toggle dropdown visibility
+    dropdownButton.MouseButton1Click:Connect(function()
+        dropdownMenu.Visible = not dropdownMenu.Visible
+        dropdownArrow.Text = dropdownMenu.Visible and "▲" or "▼"
+    end)
+    
+    -- Close dropdown when clicking elsewhere
+    local closeDropdownConnection
+    closeDropdownConnection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+            local buttonPos = dropdownButton.AbsolutePosition
+            local buttonSize = dropdownButton.AbsoluteSize
+            
+            if mousePos.X < buttonPos.X or mousePos.X > buttonPos.X + buttonSize.X or
+               mousePos.Y < buttonPos.Y or mousePos.Y > buttonPos.Y + buttonSize.Y + dropdownMenu.AbsoluteSize.Y then
+                dropdownMenu.Visible = false
+                dropdownArrow.Text = "▼"
+            end
+        end
+    end)
+    
+    -- Clean up connections
+    dropdownFrame:GetPropertyChangedSignal("Parent"):Connect(function()
+        if not dropdownFrame.Parent then
+            if closeDropdownConnection then
+                closeDropdownConnection:Disconnect()
+                closeDropdownConnection = nil
+            end
+        end
+    end)
+    
+    return {
+        frame = dropdownFrame,
+        getSelected = function()
+            return selectedOption
+        end,
+        setSelected = function(option)
+            if table.find(options, option) then
+                selectedOption = option
+                dropdownButton.Text = option
+                
+                if callback then
+                    callback(option)
+                end
+            end
+        end
+    }
+end
+
+return UIComponents 
