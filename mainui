@@ -1,0 +1,77 @@
+-- Main UI Module
+local MainUI = {}
+
+function MainUI.create()
+    local player = game.Players.LocalPlayer
+    local playerGui = player.PlayerGui
+    local contentFrame
+    
+    -- Create the ScreenGui
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "AutoPickupGui"
+    gui.ResetOnSpawn = false
+    gui.Parent = playerGui
+    
+    -- Create main frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 250, 0, 230) -- Increased height for dropdown
+    mainFrame.Position = UDim2.new(0.85, -125, 0.5, -115)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.Parent = gui
+    
+    -- Add corner radius
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 8)
+    uiCorner.Parent = mainFrame
+    
+    -- Create title bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Name = "TitleBar"
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = mainFrame
+    
+    -- Add corner radius to title bar
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 8)
+    titleCorner.Parent = titleBar
+    
+    -- Add bottom cover to fix corner radius
+    local bottomCover = Instance.new("Frame")
+    bottomCover.Size = UDim2.new(1, 0, 0.5, 0)
+    bottomCover.Position = UDim2.new(0, 0, 0.5, 0)
+    bottomCover.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    bottomCover.BorderSizePixel = 0
+    bottomCover.Parent = titleBar
+    
+    -- Title text
+    local titleText = Instance.new("TextLabel")
+    titleText.Name = "TitleText"
+    titleText.Size = UDim2.new(1, 0, 1, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "Game Settings"
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleText.TextSize = 16
+    titleText.Parent = titleBar
+    
+    -- Create content frame
+    contentFrame = Instance.new("Frame")
+    contentFrame.Name = "ContentFrame"
+    contentFrame.Size = UDim2.new(1, -20, 1, -40)
+    contentFrame.Position = UDim2.new(0, 10, 0, 35)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = mainFrame
+    
+    return {
+        gui = gui,
+        contentFrame = contentFrame
+    }
+end
+
+return MainUI 
