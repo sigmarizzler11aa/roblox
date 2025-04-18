@@ -1,0 +1,266 @@
+-- Auto Pickup Module
+local AutoPickup = {}
+
+-- Initialize function with references to the toggles and dropdown
+function AutoPickup.init(autoPickupToggle, visualizerToggle, filterDropdown)
+    local runService = game:GetService("RunService")
+    local player = game.Players.LocalPlayer
+    
+    local connection
+    local pickupTimer
+    local proximityPromptsCache = {}
+    local cacheUpdateTimer
+    local lastScanTime = 0
+    
+    -- Setup auto pickup
+    local function setupAutoPickup()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        local visualizer = nil
+        
+        -- Create the visualizer sphere using a better method for executors
+        local function createVisualizer()
+            if visualizer then return end
+            
+            -- Create an effect part that won't affect physics
+            visualizer = Instance.new("Part")
+            visualizer.Name = "PickupRangeVisualizer"
+            visualizer.Shape = Enum.PartType.Ball
+            visualizer.Size = Vector3.new(20, 20, 20)  -- 10m radius = 20m diameter
+            visualizer.Transparency = 0.8
+            visualizer.CanCollide = false
+            visualizer.Anchored = true  -- Important for preventing physics interactions
+            visualizer.CastShadow = false
+            visualizer.Material = Enum.Material.ForceField  -- Less resource-intensive material
+            visualizer.Color = Color3.fromRGB(0, 170, 255)
+            
+            -- Set network ownership to nil to prevent replication issues on executors
+            pcall(function()
+                visualizer:SetNetworkOwner(nil)
+            end)
+            
+            -- Parent to workspace at the end to avoid intermediate state issues
+            visualizer.Parent = workspace
+        end
+        
+        -- Remove the visualizer
+        local function removeVisualizer()
+            if visualizer then
+                visualizer:Destroy()
+                visualizer = nil
+            end
+        end
+        
+        -- Update the visualizer's position
+        local function updateVisualizer()
+            if visualizerToggle.getEnabled() and autoPickupToggle.getEnabled() then
+                if not visualizer then
+                    createVisualizer()
+                end
+                
+                if visualizer and humanoidRootPart then
+                    -- Simply update position directly - no welding needed
+                    visualizer.Position = humanoidRootPart.Position
+                end
+            else
+                removeVisualizer()
+            end
+        end
+        
+        -- Check if a prompt matches the current filter
+        local function matchesFilter(promptData)
+            local selectedFilter = filterDropdown.getSelected()
+            
+            -- If set to everything, always return true
+            if selectedFilter == "Everything" then
+                return true
+            end
+            
+            -- For specific filters, check parent hierarchy
+            if selectedFilter == "Strawberry" then
+                -- Check if the prompt's parent or grandparent is a model named "Strawberry"
+                local parent = promptData.part.Parent
+                
+                -- Check immediate parent
+                if parent and parent:IsA("Model") and parent.Name == "Strawberry" then
+                    return true
+                end
+                
+                -- Check grandparent
+                if parent and parent.Parent and parent.Parent:IsA("Model") and parent.Parent.Name == "Strawberry" then
+                    return true
+                end
+                
+                -- No match found
+                return false
+            end
+            
+            -- Default fallback - allow everything if no match
+            return true
+        end
+        
+        -- Cache proximity prompts to avoid scanning the entire workspace every time
+        local function updateProximityPromptsCache()
+            -- Only update cache every 2 seconds to reduce overhead
+            local currentTime = tick()
+            if currentTime - lastScanTime < 2 then return end
+            lastScanTime = currentTime
+            
+            -- Clear the old cache
+            table.clear(proximityPromptsCache)
+            
+            -- Find all proximity prompts in the workspace
+            for _, object in ipairs(workspace:GetDescendants()) do
+                if object:IsA("ProximityPrompt") then
+                    local parent = object.Parent
+                    if parent and parent:IsA("BasePart") then
+                        -- Store the proximity prompt and its parent for quick access
+                        table.insert(proximityPromptsCache, {
+                            prompt = object,
+                            part = parent
+                        })
+                    end
+                end
+            end
+        end
+        
+        -- Auto pickup proximity prompts using the cache
+        local function autoPickup()
+            if not autoPickupToggle.getEnabled() then return end
+            
+            -- Only check nearby prompts from the cache
+            for _, data in ipairs(proximityPromptsCache) do
+                local distance = (humanoidRootPart.Position - data.part.Position).Magnitude
+                if distance <= 10 and matchesFilter(data) then  -- Check distance and filter
+                    fireproximityprompt(data.prompt)
+                end
+            end
+        end
+        
+        -- Connect to RunService for visualizer updates
+        if connection then connection:Disconnect() end
+        connection = runService.RenderStepped:Connect(function()
+            updateVisualizer()
+        end)
+        
+        -- Setup a timer to update the proximity prompts cache
+        if cacheUpdateTimer then cacheUpdateTimer:Disconnect() end
+        cacheUpdateTimer = task.spawn(function()
+            while true do
+                if autoPickupToggle.getEnabled() then
+                    updateProximityPromptsCache()
+                end
+                task.wait(2) -- Update cache every 2 seconds
+            end
+        end)
+        
+        -- Setup a timer for auto pickup at 0.1 second intervals
+        if pickupTimer then 
+            if typeof(pickupTimer) == "thread" then
+                task.cancel(pickupTimer)
+            else
+                pickupTimer:Disconnect()
+            end
+            pickupTimer = nil
+        end
+        
+        -- Start the timer for auto pickup
+        local function startPickupTimer()
+            if pickupTimer then 
+                if typeof(pickupTimer) == "thread" then
+                    task.cancel(pickupTimer)
+                else
+                    pickupTimer:Disconnect()
+                end
+                pickupTimer = nil
+            end
+            
+            -- Initial cache update when starting
+            updateProximityPromptsCache()
+            
+            pickupTimer = task.spawn(function()
+                while autoPickupToggle.getEnabled() and character and character:FindFirstChild("HumanoidRootPart") do
+                    autoPickup()
+                    task.wait(0.1) -- Wait 0.1 seconds between checks
+                end
+            end)
+        end
+        
+        -- Listen for toggle changes to start/stop the timer
+        local pickupListener = autoPickupToggle.getEnabled()
+        task.spawn(function()
+            while true do
+                if pickupListener ~= autoPickupToggle.getEnabled() then
+                    pickupListener = autoPickupToggle.getEnabled()
+                    
+                    if pickupListener then
+                        startPickupTimer()
+                    elseif pickupTimer then
+                        if typeof(pickupTimer) == "thread" then
+                            task.cancel(pickupTimer)
+                        else
+                            pickupTimer:Disconnect()
+                        end
+                        pickupTimer = nil
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+        
+        -- Start timer if auto pickup is already enabled
+        if autoPickupToggle.getEnabled() then
+            startPickupTimer()
+        end
+        
+        -- Setup listeners for new proximity prompts
+        workspace.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("ProximityPrompt") and autoPickupToggle.getEnabled() then
+                -- Force an update of the cache when new prompts are added
+                task.defer(updateProximityPromptsCache)
+            end
+        end)
+        
+        -- Handle character changes (in case the root part changes)
+        character.ChildAdded:Connect(function(child)
+            if child.Name == "HumanoidRootPart" then
+                humanoidRootPart = child
+                if visualizer then
+                    visualizer.Position = humanoidRootPart.Position
+                end
+            end
+        end)
+        
+        -- Cleanup when character dies
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.Died:Connect(function()
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+            if pickupTimer then
+                if typeof(pickupTimer) == "thread" then
+                    task.cancel(pickupTimer)
+                else
+                    pickupTimer:Disconnect()
+                end
+                pickupTimer = nil
+            end
+            if cacheUpdateTimer then
+                task.cancel(cacheUpdateTimer)
+                cacheUpdateTimer = nil
+            end
+            removeVisualizer()
+        end)
+    end
+    
+    -- Initialize auto pickup when the character loads
+    setupAutoPickup()
+    
+    -- Handle character respawning
+    player.CharacterAdded:Connect(function()
+        setupAutoPickup()
+    end)
+end
+
+return AutoPickup 
